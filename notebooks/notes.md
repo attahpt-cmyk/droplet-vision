@@ -30,7 +30,7 @@ syntax that has no Python equivalent (or a much simpler one).
    → `cv2.getStructuringElement(cv2.MORPH_CROSS, (3,3))`
 
 5. **Sobel edge/sharpness filter:** standard 3×3 Sobel kernels for gradient magnitude
-   (`sqrt(Gx² + Gy²)`), sampled specifically along each blob's *boundary* pixels and averaged.
+   (`sqrt(Gx² + Gy²)`), sampled specifically along each blob's _boundary_ pixels and averaged.
    Used to reject blurry/out-of-focus detections. → `cv2.Sobel(img, cv2.CV_64F, 1, 0, ksize=3)`
    (and dy=1 for the other direction)
 
