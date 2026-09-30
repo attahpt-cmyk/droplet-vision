@@ -78,3 +78,4 @@ syntax that has no Python equivalent (or a much simpler one).
 - Keep the interactive tuning step, or move straight to a config-file-driven approach for v1?
 - Confirm actual filenames are zero-padded (frame001, frame002...) — alphabetical sort will
   order frames incorrectly otherwise (frame1, frame10, frame2...).
+  **Consider separate thresholds for jet vs. faint droplets** (two-stage approach): apply a threshold to isolate the main jet first, then apply a second, more sensitive threshold within the remaining region to catch fainter droplets that a single global threshold might miss. Alternatives to evaluate: adaptive/local thresholding (cv2.adaptiveThreshold) if lighting is uneven across the frame, or Otsu's method (cv2.threshold with THRESH_OTSU) for automatic threshold selection instead of a hardcoded value. Revisit once doing full droplet detection.
