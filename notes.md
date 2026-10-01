@@ -79,3 +79,44 @@ syntax that has no Python equivalent (or a much simpler one).
 - Confirm actual filenames are zero-padded (frame001, frame002...) — alphabetical sort will
   order frames incorrectly otherwise (frame1, frame10, frame2...).
   **Consider separate thresholds for jet vs. faint droplets** (two-stage approach): apply a threshold to isolate the main jet first, then apply a second, more sensitive threshold within the remaining region to catch fainter droplets that a single global threshold might miss. Alternatives to evaluate: adaptive/local thresholding (cv2.adaptiveThreshold) if lighting is uneven across the frame, or Otsu's method (cv2.threshold with THRESH_OTSU) for automatic threshold selection instead of a hardcoded value. Revisit once doing full droplet detection.
+
+## Investigation: jet-edge bumps misclassified as droplets (Img000000.tif)
+
+**Problem observed:** after size-filtering connected components (threshold=110, minArea=5,
+maxArea=2500), several detected "droplets" visually sit right on the jagged edge of the main
+jet, not as genuinely separate objects. Confirmed by eye on the original color image overlay.
+
+**Root cause:** connected-component labeling is pixel-exact — a single-pixel gap in the binary
+mask is enough for the algorithm to treat a jet-edge bump as a fully separate object, even
+though it reads as "one continuous jet" to a human eye at normal zoom. Binary thresholding and
+connected-component labeling are judged at completely different levels of detail.
+
+**Tested fixes (on Img000000.tif, real data):**
+
+- Morphological closing (3×3 cross kernel, matching MATLAB's `imclose`): 49 → 36 blobs after
+  size filter. Reduced count, but did NOT visually fix the specific edge-touching problem —
+  likely removed small unrelated pixel-level noise elsewhere, not the actual edge tendrils.
+- Morphological opening, same kernel, iterations 1/2/3/5: 35 / 30 / 20 / 19 blobs. Count kept
+  dropping but the visual problem was unchanged — erosion was likely destroying small genuine
+  isolated droplets elsewhere, not the (apparently not-thin) jet-edge bumps. Hypothesis was
+  wrong: these bumps aren't thin filaments vulnerable to erosion.
+- Sobel-gradient sharpness filter along blob boundaries (matching MATLAB's `sharpLimit=15`
+  logic, the one filter not yet implemented before this test): 36 → 36 blobs. Zero additional
+  blobs removed — sharp_limit=15 does not discriminate between real droplets and jet-edge
+  bumps for this frame. Either the limit needs retuning, or these bumps are physically sharp
+  too (possibly real satellite droplets mid-detachment), meaning sharpness isn't the right
+  signal to separate this specific case.
+
+**Conclusion:** none of size filtering, morphological closing/opening (at tested kernel sizes),
+or the MATLAB sharpness filter cleanly solves jet-edge-touching misclassification on its own.
+This may be a genuinely hard case for classical per-pixel methods — possibly because some of
+these "bumps" are real transitional structures (droplets actively detaching), not false
+positives, making a clean binary label ambiguous even in principle.
+
+**Revisit when:**
+
+- Doing proper OpenCV-based contour work (Month 2) — richer contour analysis (e.g. convexity
+  defects, distance-to-nearest-jet-blob) might separate these cases better than simple
+  size/sharpness filters.
+- Building the U-Net segmentation model (Month 4) — a learned model may handle ambiguous,
+  gradually-detaching structures far more robustly than hand-tuned classical filters.
