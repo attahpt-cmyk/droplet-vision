@@ -81,3 +81,34 @@ Potential future developments include:
 The current stage focuses on building the foundations of the computational workflow, including **Python programming, data handling, file management, numerical analysis, and the development of computer vision techniques**.
 
 The project will progressively expand toward advanced computer vision, machine learning, and deep learning methods while evaluating their performance on experimental high-speed imaging data.
+
+## Usage
+
+Requires Python 3.10+.
+
+```
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+python src\droplet_detect.py "path\to\image\folder" --output data\results.csv
+```
+
+Optional settings: `--threshold` (default 110), `--min-area` (default 5), `--max-area` (default 2500).
+
+## Output
+
+One row per frame in a CSV file: `filename`, `num_droplets`, `total_area` (in pixels).
+
+## Current Method
+
+1. Take the red channel of each frame
+2. Threshold: pixels darker than the threshold count as liquid
+3. Label connected regions
+4. Keep regions between `min-area` and `max-area` as droplet candidates
+
+## Known Limitations
+
+- Pixel-exact connectivity means some bumps on the jet's edge are counted as separate droplets, so counts are an upper estimate rather than ground truth.
+- Morphological closing/opening and a Sobel sharpness filter were tested on one frame and did not remove these false detections (details in `notes.md`).
+- Areas are in pixels; no spatial calibration has been applied yet.
+- The jet/droplet distinction currently relies on the area limits only.
