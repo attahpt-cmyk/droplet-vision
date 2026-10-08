@@ -2,3 +2,6 @@ numpy
 pandas
 matplotlib
 scipy
+opencv-python
+scikit-image
+ipykernel
