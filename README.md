@@ -97,8 +97,7 @@ Optional settings: `--threshold` (default 110), `--min-area` (default 5 pixels),
 
 ## Output
 
-One row per detected droplet. Columns: `filename`, `id`, `area_px`, `equiv_diameter_px`, `centroid_x`, `centroid_y`, `perimeter_px`, `circularity`.
-
+One row per detected droplet. Columns: `filename`, `id`, `area_px`, `equiv_diameter_px`, `centroid_x`, `centroid_y`, `perimeter_px`, `circularity`, `dist_to_jet_px` (distance to the main jet, taken as the largest connected region).
 Example result on 31 high-speed frames (1,583 droplets):
 
 ![Droplet size distribution](data/size_distribution.png)
@@ -119,3 +118,4 @@ Example result on 31 high-speed frames (1,583 droplets):
 - Most droplets are only 3 to 5 pixels across, so their diameters are coarse (a one-pixel error is about 25%).
 - Sizes are in pixels; no spatial calibration has been applied yet.
 - Counts are not directly comparable with the earlier matplotlib-based version of the script (`data/results.csv`, `data/droplet_counts_per_frame.csv`): OpenCV joins diagonal neighbours and decodes the TIFFs with 1-level differences. On frame 0 the count went from 49 to 42.
+- Distance to the jet shows no natural cutoff: of 1,583 detections over 31 frames, 26% are within 3 px of the jet, 37% within 5 px and 48% within 8 px. Counts per frame are therefore best reported as a range, 29 to 72 (mean 51) for all detections and 17 to 54 (mean 38) excluding those within 3 px.
