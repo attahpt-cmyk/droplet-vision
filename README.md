@@ -89,26 +89,33 @@ Requires Python 3.10+.
 ```
 python -m venv venv
 venv\Scripts\activate
-pip install -r requirements.txt
-python src\droplet_detect.py "path\to\image\folder" --output data\results.csv
+python -m pip install -r requirements.txt
+python src\droplet_detect.py "path\to\image\folder" --output data\droplets.csv
 ```
 
-Optional settings: `--threshold` (default 110), `--min-area` (default 5), `--max-area` (default 2500).
+Optional settings: `--threshold` (default 110), `--min-area` (default 5 pixels), `--max-area` (default 2500 pixels), `--min-circ-area` (default 30 pixels).
 
 ## Output
 
-One row per frame in a CSV file: `filename`, `num_droplets`, `total_area` (in pixels).
+One row per detected droplet. Columns: `filename`, `id`, `area_px`, `equiv_diameter_px`, `centroid_x`, `centroid_y`, `perimeter_px`, `circularity`.
+
+Example result on 31 high-speed frames (1,583 droplets):
+
+![Droplet size distribution](data/size_distribution.png)
 
 ## Current Method
 
-1. Take the red channel of each frame
+1. Take the red channel of each frame (OpenCV loads colour as BGR, so red is index 2)
 2. Threshold: pixels darker than the threshold count as liquid
-3. Label connected regions
-4. Keep regions between `min-area` and `max-area` as droplet candidates
+3. Label connected regions (8-connectivity)
+4. Keep regions between `min-area` and `max-area` pixels as droplet candidates
+5. Measure each one with scikit-image `regionprops`
 
 ## Known Limitations
 
 - Pixel-exact connectivity means some bumps on the jet's edge are counted as separate droplets, so counts are an upper estimate rather than ground truth.
-- Morphological closing/opening and a Sobel sharpness filter were tested on one frame and did not remove these false detections (details in `notes.md`).
-- Areas are in pixels; no spatial calibration has been applied yet.
-- The jet/droplet distinction currently relies on the area limits only.
+- Closing, opening and a Sobel sharpness filter were tested on one frame and did not remove these false detections (details in `notes.md`).
+- Circularity is only reported for droplets of 30 pixels or more, because the perimeter of smaller blobs is too coarse (values above 1 appeared below that size).
+- Most droplets are only 3 to 5 pixels across, so their diameters are coarse (a one-pixel error is about 25%).
+- Sizes are in pixels; no spatial calibration has been applied yet.
+- Counts are not directly comparable with the earlier matplotlib-based version of the script (`data/results.csv`, `data/droplet_counts_per_frame.csv`): OpenCV joins diagonal neighbours and decodes the TIFFs with 1-level differences. On frame 0 the count went from 49 to 42.
