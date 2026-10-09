@@ -120,3 +120,23 @@ positives, making a clean binary label ambiguous even in principle.
   size/sharpness filters.
 - Building the U-Net segmentation model (Month 4) — a learned model may handle ambiguous,
   gradually-detaching structures far more robustly than hand-tuned classical filters.
+
+## Experiment: background-relative threshold (not adopted in the script)
+
+Tested on frames 0, 12 and 27, then on all 31 frames, as a replacement for the fixed threshold of 110.
+
+| Method                                        | Mean count per frame | Median jet area (px) |
+| --------------------------------------------- | -------------------- | -------------------- |
+| Fixed threshold (110), current script         | 51.1                 | 150,132              |
+| Background-relative core only (`dark > 0.20`) | 49.8                 | 189,273              |
+| Core + fused 2 px growth                      | 22.6                 | 205,666              |
+| Core + per-droplet growth (`expand_labels`)   | 44.6 to 49.8         | 175,989 to 202,800   |
+
+Findings:
+
+- Outlines on clear droplets fit better (the fixed threshold cuts the blurred halo off).
+- Fused growth merged 42% of droplets into the jet, which halved the count. Per-droplet growth avoids this.
+- The jet area depends on the method (150,000 to 203,000 px). With no ground truth, none of these values can be called correct. `dist_to_jet_px` depends on this definition.
+- Many tiny detections on the jet fringe remain with every variant.
+
+Decision: keep the fixed threshold in `droplet_detect.py`. Revisit with hand-labelled frames as ground truth when comparing against U-Net/YOLO (Months 4 and 5).
