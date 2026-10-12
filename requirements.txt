@@ -5,3 +5,4 @@ scipy
 opencv-python
 scikit-image
 ipykernel
+scikit-learn
