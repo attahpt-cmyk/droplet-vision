@@ -140,3 +140,29 @@ Findings:
 - Many tiny detections on the jet fringe remain with every variant.
 
 Decision: keep the fixed threshold in `droplet_detect.py`. Revisit with hand-labelled frames as ground truth when comparing against U-Net/YOLO (Months 4 and 5).
+
+## Month 3: ML fundamentals on the droplet table (stand-in task)
+
+Task: predict whether a droplet is within 5 px of the jet (`near_jet`) from its size and shape (log area, log compactness). The label is a stand-in, because there is no hand-labelled ground truth for "real droplet" yet. `dist_to_jet_px` and `centroid_y` were excluded from the features to avoid leakage.
+
+Method: 5-fold GroupKFold by frame, scored with AUC.
+
+| Model               | Train AUC | Test AUC (± std over folds) |
+| ------------------- | --------- | --------------------------- |
+| Majority            | 0.500     | 0.500                       |
+| Logistic regression | 0.653     | 0.650 ± 0.027               |
+| Tree, depth 1       | 0.644     | 0.635 ± 0.028               |
+| Tree, depth 3       | 0.693     | 0.661 ± 0.037               |
+| Tree, depth 6       | 0.757     | 0.621 ± 0.035               |
+| Tree, unlimited     | 0.943     | 0.570 ± 0.026               |
+| Gradient boosting   | 0.763     | 0.652 ± 0.033               |
+
+Findings:
+
+- Overfitting: train AUC rises with tree depth while test AUC peaks at depth 3 and then falls. The unlimited tree memorises (0.943 vs 0.570).
+- Weak signal: all reasonable models reach about 0.65. Gradient boosting does not beat logistic regression, so the limit is the features, not the model.
+- Accuracy is misleading here: the majority class is 63%, so "always far" scores 0.63, the same as logistic regression, which finds only 18% of near-jet droplets at the 0.5 cutoff.
+- Clustering (KMeans on log area and log distance): groups are reproducible but the data is a continuum with no natural classes (silhouette 0.42 to 0.46).
+- Caveats: consecutive frames are similar, so frame-grouped folds are still slightly optimistic. The label is a stand-in for the real question.
+
+Carry forward to Months 4 and 5: hand-label several frames, split by frame, report precision/recall/F1, and compare any model against the classical pipeline as a baseline.
